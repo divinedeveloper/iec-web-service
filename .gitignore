@@ -51,6 +51,8 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+docs/_static/
+docs/_templates/
 
 .DS_Store
 db.sqlite3
