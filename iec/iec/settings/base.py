@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+import mongoengine
 
 ########## PATH CONFIGURATION
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,7 +28,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECRET_KEY = os.environ['A_SECRET_KEY']
 # Read later from a non versioned file
 
-# SECRET_KEY = os.environ['A_SECRET_KEY']
+SECRET_KEY = 'fip!($r&3_@n5%*ldqcwggk++^cdto209l$pv_mnuzzsow0)@1'
 ########## END SECRET CONFIGURATION
 
 
@@ -54,6 +55,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
 
     'rest_framework',
+    'rest_framework_mongoengine',
 
     'iec',
 )
@@ -104,12 +106,12 @@ WSGI_APPLICATION = 'iec.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
 
 ########## END DATABASE CONFIGURATION
 

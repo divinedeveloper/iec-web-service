@@ -5,3 +5,7 @@ markdown==2.6.2
 django-filter==0.11.0
 django-url-filter==0.2.0
 django-dirtyfields==1.0
+pymongo==2.9
+mongoengine==0.9.0
+blinker==1.4
+django-rest-framework-mongoengine==3.3.0
