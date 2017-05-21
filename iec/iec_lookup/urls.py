@@ -1,4 +1,4 @@
-"""iec URL Configuration
+"""iec lookup URL Configuration 
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/1.8/topics/http/urls/
@@ -14,13 +14,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
 from django.conf.urls import include, url
-from django.contrib import admin
+from iec_lookup.controllers.iec_lookup_controller import validate_importer_exporter_code
 
 urlpatterns = [
-    url(r'^admin/', include(admin.site.urls)),
 
-    # url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework'))
+    url(r'^lookup/', validate_importer_exporter_code, name='validate_importer_exporter_code'),
 
-    #iec_lookup urls included
-    url(r'^iec/api/v1/', include('iec_lookup.urls')),
 ]

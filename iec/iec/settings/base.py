@@ -58,6 +58,7 @@ INSTALLED_APPS = (
     'rest_framework_mongoengine',
 
     'iec',
+    'iec_lookup',
 )
 ########## END APP CONFIGURATION
 
@@ -148,3 +149,8 @@ REST_FRAMEWORK = {
     ]
 }
 ########## END REST FRAMEWORK CONFIGURATION
+
+DGFT_SITE_URL = "http://dgft.delhi.nic.in:8100/dgft/IecPrint"
+DGFT_IEC_NOT_PROPER_ERROR = "IEC is not proper"
+DGFT_APPLICANT_NAME_NOT_PROPER_ERROR = "Applicant name is not proper"
+DGFT_SUCCESS_REPLY = "Importer Exporter Code"
