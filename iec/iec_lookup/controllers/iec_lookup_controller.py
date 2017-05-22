@@ -28,12 +28,12 @@ def validate_importer_exporter_code(request):
 	lookup_validate_iec_response = iec_lookup_service.lookup_validate_iec(json_body)
 
 		# #trying seralizers lets see if it works
-		# serializer = IECDetailsSerializer(lookup_validate_iec_response, many=False)
-		# return JsonResponse(serializer.data, safe=False)
+	serializer = IECDetailsSerializer(lookup_validate_iec_response, many=True)
+	return JsonResponse(serializer.data, safe=False)
 
 
-	HttpResponse.status_code = status.HTTP_201_CREATED
-	return JsonResponse({"resp": lookup_validate_iec_response});
+	# HttpResponse.status_code = status.HTTP_201_CREATED
+	# return JsonResponse({"resp": lookup_validate_iec_response});
 	# except ValueError as err:
 	# 	HttpResponse.status_code = err.args[1]
 	# 	return JsonResponse({'detail': err.args[0], 'status' : err.args[1]})

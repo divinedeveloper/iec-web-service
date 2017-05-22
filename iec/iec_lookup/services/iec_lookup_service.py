@@ -3,7 +3,7 @@ from iec_lookup.models import ImporterExporterCodeDetails, Director, Branch, Reg
 from mongoengine.django.shortcuts import get_document_or_404
 from django.conf import settings
 from rest_framework import status
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString, Tag
 from collections import OrderedDict
 import datetime
 import requests
@@ -56,7 +56,7 @@ class IECLookupService():
 				
 			except requests.exceptions.RequestException as e:
 				#check if it exists in retrieval document, if not create one 
-				self.check_save_iec_to_retrieve(json_body)
+				self.get_or_save_iec_to_retrieve_data(json_body)
 				raise ValueError('Sorry, We are facing issues connecting to DGFT site. Please try again later.', status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
@@ -75,7 +75,7 @@ class IECLookupService():
 
 
 
-	def check_save_iec_to_retrieve(self, json_body):
+	def get_or_save_iec_to_retrieve_data(self, json_body):
 		importer_exporter_code_to_retrieve = ImporterExporterCodeToBeRetrieved.objects(importer_exporter_code= json_body["code"], name__istartswith= json_body["name"])
 		if importer_exporter_code_to_retrieve:
 			return
@@ -95,42 +95,29 @@ class IECLookupService():
 			#parse html and convert to json or dict and save in db
 			return self.html_to_object_parser_for_success_data(dgft_site_response)
 		else:
-			return
-			#parse just the body of html of error message and return message
+			#parse just the body of html of error message and throw exception message
+			return self.html_to_object_parser_for_error_data(dgft_site_response)
+			
 
 
 	def html_to_object_parser_for_success_data(self, dgft_site_response):
 		dgft_site_response_soup = BeautifulSoup(dgft_site_response, "html.parser")
-		iec_tables = dgft_site_response_soup.findAll("table")
-		filled_iec_details_object = self.iec_details_html_data_parser(iec_tables[0])
-		filled_directors_list = self.directors_html_data_parser(iec_tables[1])
-		# filled_iec_details_object = self.iec_details_html_data_parser(iec_tables[0])
-		# filled_iec_details_object = self.iec_details_html_data_parser(iec_tables[0])
-		# filled_iec_details_object = self.iec_details_html_data_parser(iec_tables[0])
+		iec_tables = dgft_site_response_soup.find_all("table")
+		importer_exporter_code_details = self.iec_details_html_data_parser(iec_tables[0])
+		directors_list = self.directors_html_data_parser(iec_tables[1])
+		branches_list = self.branches_html_data_parser(iec_tables[2])
+		registration_details_list = self.registration_details_html_data_parser(iec_tables[3])
+		rcmc_details_list = self.rcmc_details_html_data_parser(iec_tables[4])
 
+		saved_iec_details = self.save_complete_iec_details(importer_exporter_code_details, directors_list, branches_list, registration_details_list, rcmc_details_list)
+		return saved_iec_details
 
+	def html_to_object_parser_for_error_data(self, dgft_site_error_response):
+		dgft_site_error_response_soup = BeautifulSoup(dgft_site_error_response, "html.parser")
+		dgft_site_error_message = str(dgft_site_error_response_soup.find("body").text)
 
-		# for index, each_iec_table in enumerate(iec_tables):
-		# 	if index == 0:
-		# 		#it contains iec details data send it to iec html data parser
-		# 		logging.debug(each_iec_table)
-		# 		logging.debug("###################################################################################")
-		# 	if index == 1:
-		# 		#it contains Directors data send it to director html data parser
-		# 	if index == 2:
-		# 		#it contains Branches data send it to Branches html data parser
-		# 	if index == 3:
-		# 		#it contains Registration Details data send it to Registration Details  html data parser
-		# 	if index == 4:
-		# 		#it contains RCMC Details  data send it to RCMC html data parser
+		raise ValueError(dgft_site_error_message, status.HTTP_400_BAD_REQUEST)
 
-
-		# iec_table_data = [[cell.text for cell in row("td") if cell.text != ":"] for row in each_iec_table("tr")]
-		# logging.debug(iec_table_data)
-		# filtered_iec_table_data =  filter(None, iec_table_data)
-		# logging.debug(filtered_iec_table_data)
-		
-		return #json.dumps(OrderedDict(filtered_iec_table_data))
 
 	def iec_details_html_data_parser(self, iec_html_data):
 
@@ -140,7 +127,7 @@ class IECLookupService():
 		#avoiding duplicates and will get data in order
 		ordered_dictionary_of_iec_table_data = OrderedDict(filtered_iec_table_data_list)
 
-		filled_iec_details_object = ImporterExporterCodeDetails(importer_exporter_code = ordered_dictionary_of_iec_table_data['IEC'],
+		importer_exporter_code_details = ImporterExporterCodeDetails(importer_exporter_code = ordered_dictionary_of_iec_table_data['IEC'],
 			importer_exporter_code_allotment_date = ordered_dictionary_of_iec_table_data['IEC Allotment Date'], file_number = ordered_dictionary_of_iec_table_data['File Number'],
 			file_date = ordered_dictionary_of_iec_table_data['File Date'], party_name_address = ordered_dictionary_of_iec_table_data['Party Name and Address'],
 			phone_number = ordered_dictionary_of_iec_table_data['Phone No'], email = ordered_dictionary_of_iec_table_data['e_mail'],
@@ -150,24 +137,108 @@ class IECLookupService():
 			nature_of_concern = ordered_dictionary_of_iec_table_data['Nature Of Concern'], banker_detail = ordered_dictionary_of_iec_table_data['Banker Detail']
 			)
 
-		# logging.debug(filled_iec_details_object.party_name_address.strip())
-
-		return filled_iec_details_object
+		return importer_exporter_code_details
 
 	def directors_html_data_parser(self, directors_html_data):
+		directors_list = []
+		directors_data = directors_html_data.find_all('td', attrs={'colspan':'100'})
+		for each_director_data in directors_data:
+			director_name = each_director_data.br.previous_sibling
+			fathers_name = each_director_data.br.next_sibling
+			address_line_1 = self.get_text_of_next_sibling(fathers_name) 
+			address_line_2 = self.get_text_of_next_sibling(address_line_1)
+			address_line_3 = self.get_text_of_next_sibling(address_line_2)
+			address_line_4 = self.get_text_of_next_sibling(address_line_3)
+			phone_email = self.get_text_of_next_sibling(address_line_4)
 
-		logging.debug(directors_html_data)
-		#NEDD TO WORK ON THIS LOGIC TO SEPARATE FIELDS BY BR
+			new_director = Director(name= self.get_string_from_sibling_text(director_name), fathers_name= self.get_string_from_sibling_text(fathers_name),
+				address_line_1 = self.get_string_from_sibling_text(address_line_1), address_line_2 = self.get_string_from_sibling_text(address_line_2),
+				address_line_3 = self.get_string_from_sibling_text(address_line_3), address_line_4 = self.get_string_from_sibling_text(address_line_4),
+				phone_email = self.get_string_from_sibling_text(phone_email))
 
-		directors_table_data_list = [[cell.text for cell in row("td") if cell.text != ":"] for row in directors_html_data("tr")]
-		filtered_directors_table_data_list =  filter(None, directors_table_data_list)
+			directors_list.append(new_director) 
+		return directors_list
 
-		#avoiding duplicates and will get data in order
-		ordered_dictionary_of_directors_table_data = OrderedDict(filtered_directors_table_data_list)
+	def branches_html_data_parser(self, branches_html_data):
+		branches_list = []
+		branches_data = branches_html_data.find_all('td', attrs={'colspan':'100'})
+		for each_branch_data in branches_data:
+			branch_code = str(each_branch_data.br.previous_sibling).split(":")[1]
+			address_line_1 = each_branch_data.br.next_sibling
+			address_line_2 = self.get_text_of_next_sibling(address_line_1)
+			address_line_3 = self.get_text_of_next_sibling(address_line_2)
+			address_line_4 = self.get_text_of_next_sibling(address_line_3)
 
-		logging.debug(ordered_dictionary_of_directors_table_data)
+			new_branch = Branch(branch_code= int(branch_code),address_line_1 = self.get_string_from_sibling_text(address_line_1), 
+				address_line_2 = self.get_string_from_sibling_text(address_line_2), address_line_3 = self.get_string_from_sibling_text(address_line_3), 
+				address_line_4 = self.get_string_from_sibling_text(address_line_4))
 
-		return #filled_iec_details_object
+			branches_list.append(new_branch)
+
+		return branches_list
+		
+	def registration_details_html_data_parser(self, registration_details_html_data):
+		registration_details_list = []
+		registration_details_data = registration_details_html_data.find_all('td', attrs={'colspan':'100'})
+		for each_registration_detail_data in registration_details_data:
+			registration_type = str(each_registration_detail_data.br.previous_sibling).split(":")[1]
+			registration_number = each_registration_detail_data.br.next_sibling
+			issue_date = self.get_text_of_next_sibling(registration_number)
+			registered_with = str(self.get_text_of_next_sibling(issue_date)).split("With")[1]
+
+			registration_number = str(registration_number).split(":")[1]
+			issue_date = str(issue_date).split(":")[1]
+
+			new_registration_details = RegistrationDetails(registration_type= int(registration_type),
+				registration_number = self.get_string_from_sibling_text(registration_number), 
+				issue_date = self.get_string_from_sibling_text(issue_date), 
+				registered_with = self.get_string_from_sibling_text(registered_with))
+
+			registration_details_list.append(new_registration_details)
+
+		return registration_details_list
+
+	
+	def rcmc_details_html_data_parser(self, rcmc_details_html_data):
+		rcmc_details_list = []
+		rcmc_details_data = rcmc_details_html_data.find_all('td', attrs={'colspan':'100'})
+		for each_rcmc_detail_data in rcmc_details_data:
+			rcmc_id = each_rcmc_detail_data.br.previous_sibling
+			rcmc_number = each_rcmc_detail_data.br.next_sibling
+			issue_date = self.get_text_of_next_sibling(rcmc_number)
+			expiry = self.get_text_of_next_sibling(issue_date)
+			issued_by = str(self.get_text_of_next_sibling(expiry)).split(":")[1]
+
+			issue_date = str(issue_date).split(":")[1]
+			expiry = str(expiry).split(":")[1]
+
+			new_rcmc_details = RegistrationCumMembershipCertificateDetails(rcmc_id= int(rcmc_id),rcmc_number = self.get_string_from_sibling_text(rcmc_number), 
+				issue_date = self.get_string_from_sibling_text(issue_date), expiry = self.get_string_from_sibling_text(expiry),
+				issued_by = self.get_string_from_sibling_text(issued_by))
+
+			rcmc_details_list.append(new_rcmc_details)
+
+		return rcmc_details_list
+
+
+	def get_text_of_next_sibling(self, current_sibling):
+		return current_sibling.next_sibling.next_sibling
+
+	def get_string_from_sibling_text(self, sibling_text):
+		return str(sibling_text)
+
+	def save_complete_iec_details(self, importer_exporter_code_details, directors_list, branches_list, registration_details_list, rcmc_details_list):
+		importer_exporter_code_details.directors = directors_list
+		importer_exporter_code_details.branches = branches_list
+		importer_exporter_code_details.registration_details = registration_details_list
+		importer_exporter_code_details.rcmc_details = rcmc_details_list
+
+		saved_iec_details = importer_exporter_code_details.save()	
+		return saved_iec_details	
+
+
+
+
 
 
 

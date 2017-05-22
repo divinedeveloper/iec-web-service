@@ -11,9 +11,12 @@ class Director(EmbeddedDocument):
 	"""
 
 	name = fields.StringField(required=True)
-	fathers_name = fields.StringField(required=True)
-	residential_address = fields.StringField(required=True)
-	phone_email = fields.StringField(required=True)
+	fathers_name = fields.StringField()
+	address_line_1 = fields.StringField()
+	address_line_2 = fields.StringField()
+	address_line_3 = fields.StringField()
+	address_line_4 = fields.StringField()
+	phone_email = fields.StringField()
 
 
 class Branch(EmbeddedDocument):
@@ -22,8 +25,12 @@ class Branch(EmbeddedDocument):
 	It will be embedded in IEC Details model
 	"""
 
-	branch_code = fields.StringField(required=True)
-	branch_address = fields.StringField(required=True)
+	branch_code = fields.IntField()
+	address_line_1 = fields.StringField()
+	address_line_2 = fields.StringField()
+	address_line_3 = fields.StringField()
+	address_line_4 = fields.StringField()
+
 
 
 class RegistrationDetails(EmbeddedDocument):
@@ -32,10 +39,10 @@ class RegistrationDetails(EmbeddedDocument):
 	It will be embedded in IEC Details model
 	"""
 
-	registration_type = fields.IntField(required=True)
+	registration_type = fields.IntField()
 	registration_number = fields.StringField(required=True)
 	issue_date = fields.StringField()
-	registered_with = fields.StringField(required=True)
+	registered_with = fields.StringField()
 
 
 class RegistrationCumMembershipCertificateDetails(EmbeddedDocument):
@@ -45,11 +52,11 @@ class RegistrationCumMembershipCertificateDetails(EmbeddedDocument):
 	It will be embedded in IEC Details model
 	"""
 
-	rcmc_id = fields.IntField(required=True)
+	rcmc_id = fields.IntField()
 	rcmc_number = fields.StringField(required=True)
 	issue_date = fields.StringField()
 	expiry = fields.StringField()
-	issued_by = fields.StringField(required=True)
+	issued_by = fields.StringField()
 	
 class ImporterExporterCodeDetails(Document):
 	"""
@@ -64,7 +71,7 @@ class ImporterExporterCodeDetails(Document):
 	file_date = fields.StringField()
 	party_name_address = fields.StringField(required=True)
 	phone_number = fields.StringField(required=True)
-	email = fields.EmailField(required=False)
+	email = fields.StringField(required=False)
 	exporter_type = fields.StringField(required=True)
 	importer_exporter_code_status = fields.StringField(required=True)
 	date_of_establishment = fields.StringField()
