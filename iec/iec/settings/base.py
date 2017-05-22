@@ -150,7 +150,16 @@ REST_FRAMEWORK = {
 }
 ########## END REST FRAMEWORK CONFIGURATION
 
+########## GLOBAL STRING VALUES CONFIGURATION
+
 DGFT_SITE_URL = "http://dgft.delhi.nic.in:8100/dgft/IecPrint"
 DGFT_IEC_NOT_PROPER_ERROR = "IEC is not proper"
 DGFT_APPLICANT_NAME_NOT_PROPER_ERROR = "Applicant name is not proper"
 DGFT_SUCCESS_REPLY = "Importer Exporter Code"
+DGFT_PARTY_NAME_ADDRESS_STRING = "Party Name and Address" 
+DGFT_BANKER_DETAIL_STRING = "Banker Detail"
+IEC_STATUS_STRING = "IEC Status"
+
+########## END GLOBAL STRING VALUES CONFIGURATION
+
+# DGFT_SUCCESS_RESPONSE = """ """

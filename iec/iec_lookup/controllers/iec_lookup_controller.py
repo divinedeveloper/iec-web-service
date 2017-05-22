@@ -27,7 +27,11 @@ def validate_importer_exporter_code(request):
 	iec_lookup_service = IECLookupService()
 	lookup_validate_iec_response = iec_lookup_service.lookup_validate_iec(json_body)
 
-		# #trying seralizers lets see if it works
+	# #trying seralizers lets see if it works
+	# lookup_field = 'id'
+	# serializer_class = IECDetailsSerializer
+
+
 	serializer = IECDetailsSerializer(lookup_validate_iec_response, many=True)
 	return JsonResponse(serializer.data, safe=False)
 
@@ -40,3 +44,28 @@ def validate_importer_exporter_code(request):
 	# except Exception, e:
 	# 	HttpResponse.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
 	# 	return JsonResponse({'detail': 'Oops, An Error occured','error': str(e), 'status':status.HTTP_500_INTERNAL_SERVER_ERROR})
+
+
+def retrieve_importer_exporter_code(request):
+	try:
+		code = request.GET.get('code', '')
+		if code == "" or code == None :
+			raise ValueError('Please provide flat type', status.HTTP_400_BAD_REQUEST)
+
+		iec_lookup_service = IECLookupService()
+		iec_data_response = iec_lookup_service.retrieve_iec_data_with_code(code)
+
+		serializer = IECDetailsSerializer(iec_data_response, many=True)
+		return JsonResponse(serializer.data, safe=False)
+
+
+	# HttpResponse.status_code = status.HTTP_201_CREATED
+	# return JsonResponse({"resp": lookup_validate_iec_response});
+	except ValueError as err:
+		HttpResponse.status_code = err.args[1]
+		return JsonResponse({'detail': err.args[0], 'status' : err.args[1]})
+	except Exception, e:
+		HttpResponse.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+		return JsonResponse({'detail': 'Oops, An Error occured','error': str(e), 'status':status.HTTP_500_INTERNAL_SERVER_ERROR})
+
+

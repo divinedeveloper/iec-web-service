@@ -14,10 +14,11 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
 from django.conf.urls import include, url
-from iec_lookup.controllers.iec_lookup_controller import validate_importer_exporter_code
+from iec_lookup.controllers.iec_lookup_controller import validate_importer_exporter_code, retrieve_importer_exporter_code
 
 urlpatterns = [
 
     url(r'^lookup/', validate_importer_exporter_code, name='validate_importer_exporter_code'),
+    url(r'^retrieve/', retrieve_importer_exporter_code, name='retrieve_importer_exporter_code'),
 
 ]
