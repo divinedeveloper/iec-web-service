@@ -191,33 +191,10 @@ class IECLookupService():
 		"""
 		party_name = party_name_address_soup.br.previous_sibling
 
-		party_address = ""
-
-		for each_br_tag in party_name_address_soup.find_all("br"):
-			next_sibling_value = each_br_tag.next_sibling
-			if next_sibling_value and isinstance(next_sibling_value,NavigableString):
-				party_address = party_address + self.get_string_from_sibling_text(next_sibling_value)
-
-		# 	logging.debug("above if jk")
-		# 	logging.debug(next_sibling_value)
-		# 	if not (next_sibling_value and isinstance(next_sibling_value,NavigableString)):
-		# 		continue
-		# 	another_sibing_value = next_sibling_value.next_sibling
-		# if another_sibing_value and isinstance(another_sibing_value,Tag) and another_sibing_value.name == 'br':
-		# 	next_sibling_text = str(next_sibling_value).strip()
-		# 	if next_sibling_text:
-		# 		logging.debug(next_sibling_text)
-		# 		party_address = party_address + next_sibling_text
-
-		
-		# party_address_line_1 = party_name_address_soup.br.next_sibling
-		# party_address_line_2 = self.get_text_of_next_sibling(party_address_line_1)
-		# party_address_line_3 = self.get_text_of_next_sibling(party_address_line_2)
-		# party_address_line_4 = self.get_text_of_next_sibling(party_address_line_3)
+		party_address = self.parse_address_of_party_and_branch(party_name_address_soup)
 
 		iec_order_dict_data['party_name'] = party_name
 		iec_order_dict_data['party_address'] = party_address
-		# iec_order_dict_data['party_address'] = self.get_string_from_sibling_text(party_address_line_1) + self.get_string_from_sibling_text(party_address_line_2) + self.get_string_from_sibling_text(party_address_line_3) + self.get_string_from_sibling_text(party_address_line_4)
 
 		return iec_order_dict_data
 
@@ -245,16 +222,43 @@ class IECLookupService():
 
 		for each_director_data in directors_data:
 			director_name = each_director_data.br.previous_sibling
-			fathers_name = each_director_data.br.next_sibling
+			fathers_name = ""
+			phone_email = ""
+			address = ""
 
-			address_line_1 = self.get_text_of_next_sibling(fathers_name) 
-			address_line_2 = self.get_text_of_next_sibling(address_line_1)
-			address_line_3 = self.get_text_of_next_sibling(address_line_2)
-			address_line_4 = self.get_text_of_next_sibling(address_line_3)
-			phone_email = str(self.get_text_of_next_sibling(address_line_4)).split(":")[1]
+			list_of_br_tag = each_director_data.find_all("br")
+			for index, each_br_tag in enumerate(list_of_br_tag):
+				next_sibling_value = each_br_tag.next_sibling
+
+				if next_sibling_value and next_sibling_value != " " and isinstance(next_sibling_value,NavigableString):
+					next_sibling_value = self.get_string_from_sibling_text(next_sibling_value)
+
+					#first field is father name value
+					if index == 0:
+						fathers_name = next_sibling_value
+						continue
+
+					#last field is phone/email value
+					if index == len(list_of_br_tag)-1:
+						phone_email = next_sibling_value.split(":")[1]
+						continue
+
+					#rest fields are of address
+					if next_sibling_value.endswith(',') or 'PIN-' in next_sibling_value:
+						#if string contains ',' or contain PIN no. that is end of string
+						#then dont append comma with space
+						if not 'PIN-' in next_sibling_value:
+							#if string has ',' and is not PIN- number only append space
+							address = address +  next_sibling_value + " "
+						else:
+							address = address +  next_sibling_value
+					else:
+						#append comma with space for displaying proper address
+						next_sibling_value = next_sibling_value + ", "
+						address = address +  next_sibling_value
 
 			new_director = Director(name= self.get_string_from_sibling_text(director_name), fathers_name= self.get_string_from_sibling_text(fathers_name),
-				address = self.get_string_from_sibling_text(address_line_1) + self.get_string_from_sibling_text(address_line_2) + self.get_string_from_sibling_text(address_line_3) + self.get_string_from_sibling_text(address_line_4),
+				address = self.get_string_from_sibling_text(address),
 				phone_email = self.get_string_from_sibling_text(phone_email))
 
 			directors_list.append(new_director) 
@@ -270,19 +274,42 @@ class IECLookupService():
 
 		for each_branch_data in branches_data:
 			branch_code = str(each_branch_data.br.previous_sibling).split(":")[1]
-			address_line_1 = each_branch_data.br.next_sibling
-			address_line_2 = self.get_text_of_next_sibling(address_line_1)
-			address_line_3 = self.get_text_of_next_sibling(address_line_2)
-			address_line_4 = self.get_text_of_next_sibling(address_line_3)
 
-			new_branch = Branch(branch_code= int(branch_code),
-				address = self.get_string_from_sibling_text(address_line_1) + self.get_string_from_sibling_text(address_line_2) + self.get_string_from_sibling_text(address_line_3) + self.get_string_from_sibling_text(address_line_4)
-				)
+			address = self.parse_address_of_party_and_branch(each_branch_data)
+
+			new_branch = Branch(branch_code= int(branch_code), address = address)
 
 			branches_list.append(new_branch)
 
 		return branches_list
 		
+	def parse_address_of_party_and_branch(self, address_soup):
+		"""
+		This helper method takes table data containing address soup
+		and iterates on all br tags to get address text, 
+		append space and ',' for proper string formatting
+		and returns address
+		"""
+		address = ""
+		for each_br_tag in address_soup.find_all("br"):
+			next_sibling_value = each_br_tag.next_sibling
+			if next_sibling_value and next_sibling_value != " " and isinstance(next_sibling_value,NavigableString):
+				next_sibling_value = self.get_string_from_sibling_text(next_sibling_value)
+				if next_sibling_value.endswith(',') or 'PIN-' in next_sibling_value:
+					#if string contains ',' or contain PIN no. that is end of string
+					#then dont append comma with space
+					if not 'PIN-' in next_sibling_value:
+						#if string has ',' and is not PIN- number only append space
+						address = address +  next_sibling_value + " "
+					else:
+						address = address +  next_sibling_value
+				else:
+					#append comma with space for displaying proper address
+					next_sibling_value = next_sibling_value + ", "
+					address = address +  next_sibling_value
+
+		return address
+
 	def registration_details_html_data_parser(self, registration_details_html_data):
 		"""
 		Table data for RegistrationDetails,
