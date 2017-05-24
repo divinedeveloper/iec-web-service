@@ -45,7 +45,7 @@ class IECLookupService():
 		"""
 		importer_exporter_code_details = self.get_iec_with_code_and_name(json_body)
 		if importer_exporter_code_details:
-			return importer_exporter_code_details
+			return importer_exporter_code_details[0]
 		else:
 			try:
 				dgft_site_response = self.poll_dgft_site_with_iec_and_name(json_body)
@@ -56,13 +56,20 @@ class IECLookupService():
 				#check if it exists in retrieval document, if not create one 
 				self.get_or_save_iec_to_retrieve_data(json_body)
 				raise ValueError('Sorry, Unable to connect to DGFT site. Please try again later.', status.HTTP_503_SERVICE_UNAVAILABLE)
-		# return "an object will be returned" 
 
 	def get_iec_with_code_and_name(self, json_body):
+		"""
+		This method will return a QuerySet List of IEC details
+		Get object by index in calling method
+		"""
 		importer_exporter_code_details = ImporterExporterCodeDetails.objects(importer_exporter_code= json_body["code"], party_name__istartswith= json_body["name"])
 		return importer_exporter_code_details
 
 	def poll_dgft_site_with_iec_and_name(self, json_body):
+		"""
+		This method will make a request to dgft site with provided code and name
+		and fetch response
+		"""
 		dgft_site_response = requests.post(settings.DGFT_SITE_URL, data={'iec': json_body['code'], 'name': json_body['name']})
 		# logging.debug(dgft_site_response.text)
 		return dgft_site_response.text
@@ -80,9 +87,10 @@ class IECLookupService():
 			return
 
 	def handle_dgft_response(self, dgft_site_response):
-		#if invalid response throw exceptions with corresponding messages
-		#else send to parse html
-
+		"""
+		if invalid response from dgft site, throw exceptions with corresponding messages
+		else send to parse html and get data
+		"""
 		if dgft_site_response == settings.DGFT_IEC_NOT_PROPER_ERROR:
 			raise ValueError('Please enter proper iec code', status.HTTP_400_BAD_REQUEST)
 		if dgft_site_response == settings.DGFT_APPLICANT_NAME_NOT_PROPER_ERROR:
@@ -95,6 +103,11 @@ class IECLookupService():
 			return self.html_to_object_parser_for_error_data(dgft_site_response)
 
 	def html_to_object_parser_for_success_data(self, dgft_site_response):
+		"""
+		Get success html data and send it to appropriate table data parser and get text values
+		using BeautifulSoup library
+		Then  save it
+		"""
 		dgft_site_response_soup = BeautifulSoup(dgft_site_response, "html.parser")
 		iec_tables = dgft_site_response_soup.find_all("table")
 		importer_exporter_code_details = self.iec_details_html_data_parser(iec_tables[0])
@@ -107,12 +120,19 @@ class IECLookupService():
 		return saved_iec_details
 
 	def html_to_object_parser_for_error_data(self, dgft_site_error_response):
+		""" 
+		Some erros do come in html body parse them and throw message 
+		"""
 		dgft_site_error_response_soup = BeautifulSoup(dgft_site_error_response, "html.parser")
 		dgft_site_error_message = str(dgft_site_error_response_soup.find("body").text)
 
 		raise ValueError(dgft_site_error_message, status.HTTP_400_BAD_REQUEST)
 
 	def iec_details_html_data_parser(self, iec_html_data):
+		"""
+		Table data for Basic IEC details,
+		Parse and set in Iec object
+		"""
 		iec_table_rows = iec_html_data.find_all("tr")
 		iec_order_dict_data = OrderedDict()
 
@@ -143,15 +163,12 @@ class IECLookupService():
 					iec_order_dict_data = self.parse_banker_detail_soup(banker_detail_soup, iec_order_dict_data)
 									
 
-		importer_exporter_code_details = ImporterExporterCodeDetails(importer_exporter_code = iec_order_dict_data['IEC'],
+		importer_exporter_code_details = ImporterExporterCodeDetails(importer_exporter_code = self.get_string_from_sibling_text(iec_order_dict_data['IEC']),
 			importer_exporter_code_allotment_date = self.get_string_from_sibling_text(iec_order_dict_data['IEC Allotment Date']),
 			file_number = self.get_string_from_sibling_text(iec_order_dict_data['File Number']),
 			file_date = self.get_string_from_sibling_text(iec_order_dict_data['File Date']), 
 			party_name = self.get_string_from_sibling_text(iec_order_dict_data['party_name']),
-			party_address_line_1 = self.get_string_from_sibling_text(iec_order_dict_data['party_address_line_1']),
-			party_address_line_2 = self.get_string_from_sibling_text(iec_order_dict_data['party_address_line_2']),
-			party_address_line_3 = self.get_string_from_sibling_text(iec_order_dict_data['party_address_line_3']),
-			party_address_line_4 = self.get_string_from_sibling_text(iec_order_dict_data['party_address_line_4']),
+			party_address = iec_order_dict_data['party_address'],
 			phone_number = self.get_string_from_sibling_text(iec_order_dict_data['Phone No']), 
 			email = self.get_string_from_sibling_text(iec_order_dict_data['e_mail']),
 			exporter_type = self.get_string_from_sibling_text(iec_order_dict_data['Exporter Type']), 
@@ -169,23 +186,46 @@ class IECLookupService():
 		return importer_exporter_code_details
 
 	def parse_party_name_address_soup(self, party_name_address_soup, iec_order_dict_data):
+		"""
+		It separates party name and address fields and parses them
+		"""
 		party_name = party_name_address_soup.br.previous_sibling
-		party_address_line_1 = party_name_address_soup.br.next_sibling
-		party_address_line_2 = self.get_text_of_next_sibling(party_address_line_1)
-		party_address_line_3 = self.get_text_of_next_sibling(party_address_line_2)
-		party_address_line_4 = self.get_text_of_next_sibling(party_address_line_3)
 
+		party_address = ""
+
+		for each_br_tag in party_name_address_soup.find_all("br"):
+			next_sibling_value = each_br_tag.next_sibling
+			if next_sibling_value and isinstance(next_sibling_value,NavigableString):
+				party_address = party_address + self.get_string_from_sibling_text(next_sibling_value)
+
+		# 	logging.debug("above if jk")
+		# 	logging.debug(next_sibling_value)
+		# 	if not (next_sibling_value and isinstance(next_sibling_value,NavigableString)):
+		# 		continue
+		# 	another_sibing_value = next_sibling_value.next_sibling
+		# if another_sibing_value and isinstance(another_sibing_value,Tag) and another_sibing_value.name == 'br':
+		# 	next_sibling_text = str(next_sibling_value).strip()
+		# 	if next_sibling_text:
+		# 		logging.debug(next_sibling_text)
+		# 		party_address = party_address + next_sibling_text
+
+		
+		# party_address_line_1 = party_name_address_soup.br.next_sibling
+		# party_address_line_2 = self.get_text_of_next_sibling(party_address_line_1)
+		# party_address_line_3 = self.get_text_of_next_sibling(party_address_line_2)
+		# party_address_line_4 = self.get_text_of_next_sibling(party_address_line_3)
 
 		iec_order_dict_data['party_name'] = party_name
-		iec_order_dict_data['party_address_line_1'] = party_address_line_1
-		iec_order_dict_data['party_address_line_2'] = party_address_line_2
-		iec_order_dict_data['party_address_line_3'] = party_address_line_3
-		iec_order_dict_data['party_address_line_4'] = party_address_line_4
+		iec_order_dict_data['party_address'] = party_address
+		# iec_order_dict_data['party_address'] = self.get_string_from_sibling_text(party_address_line_1) + self.get_string_from_sibling_text(party_address_line_2) + self.get_string_from_sibling_text(party_address_line_3) + self.get_string_from_sibling_text(party_address_line_4)
 
 		return iec_order_dict_data
 
 	def parse_banker_detail_soup(self, banker_detail_soup, iec_order_dict_data):
-		bank_name_and_location = banker_detail_soup.br.previous_sibling
+		"""
+		It separates bank name-location and account fields and parses them
+		"""
+		bank_name_and_location = banker_detail_soup.br.previous_sibling if banker_detail_soup.br.previous_sibling else "" 
 		account_type = banker_detail_soup.br.next_sibling
 		account_number = self.get_text_of_next_sibling(account_type)
 
@@ -196,27 +236,35 @@ class IECLookupService():
 		return iec_order_dict_data
 
 	def directors_html_data_parser(self, directors_html_data):
+		"""
+		Table data for Directors,
+		Parse and set in Director object
+		"""
 		directors_list = []
 		directors_data = directors_html_data.find_all('td', attrs={'colspan':'100'})
 
 		for each_director_data in directors_data:
 			director_name = each_director_data.br.previous_sibling
 			fathers_name = each_director_data.br.next_sibling
+
 			address_line_1 = self.get_text_of_next_sibling(fathers_name) 
 			address_line_2 = self.get_text_of_next_sibling(address_line_1)
 			address_line_3 = self.get_text_of_next_sibling(address_line_2)
 			address_line_4 = self.get_text_of_next_sibling(address_line_3)
-			phone_email = self.get_text_of_next_sibling(address_line_4)
+			phone_email = str(self.get_text_of_next_sibling(address_line_4)).split(":")[1]
 
 			new_director = Director(name= self.get_string_from_sibling_text(director_name), fathers_name= self.get_string_from_sibling_text(fathers_name),
-				address_line_1 = self.get_string_from_sibling_text(address_line_1), address_line_2 = self.get_string_from_sibling_text(address_line_2),
-				address_line_3 = self.get_string_from_sibling_text(address_line_3), address_line_4 = self.get_string_from_sibling_text(address_line_4),
+				address = self.get_string_from_sibling_text(address_line_1) + self.get_string_from_sibling_text(address_line_2) + self.get_string_from_sibling_text(address_line_3) + self.get_string_from_sibling_text(address_line_4),
 				phone_email = self.get_string_from_sibling_text(phone_email))
 
 			directors_list.append(new_director) 
 		return directors_list
 
 	def branches_html_data_parser(self, branches_html_data):
+		"""
+		Table data for Branches,
+		Parse and set in Branch object
+		"""
 		branches_list = []
 		branches_data = branches_html_data.find_all('td', attrs={'colspan':'100'})
 
@@ -227,15 +275,19 @@ class IECLookupService():
 			address_line_3 = self.get_text_of_next_sibling(address_line_2)
 			address_line_4 = self.get_text_of_next_sibling(address_line_3)
 
-			new_branch = Branch(branch_code= int(branch_code),address_line_1 = self.get_string_from_sibling_text(address_line_1), 
-				address_line_2 = self.get_string_from_sibling_text(address_line_2), address_line_3 = self.get_string_from_sibling_text(address_line_3), 
-				address_line_4 = self.get_string_from_sibling_text(address_line_4))
+			new_branch = Branch(branch_code= int(branch_code),
+				address = self.get_string_from_sibling_text(address_line_1) + self.get_string_from_sibling_text(address_line_2) + self.get_string_from_sibling_text(address_line_3) + self.get_string_from_sibling_text(address_line_4)
+				)
 
 			branches_list.append(new_branch)
 
 		return branches_list
 		
 	def registration_details_html_data_parser(self, registration_details_html_data):
+		"""
+		Table data for RegistrationDetails,
+		Parse and set in RegistrationDetails object
+		"""
 		registration_details_list = []
 		registration_details_data = registration_details_html_data.find_all('td', attrs={'colspan':'100'})
 
@@ -259,6 +311,10 @@ class IECLookupService():
 
 	
 	def rcmc_details_html_data_parser(self, rcmc_details_html_data):
+		"""
+		Table data for RegistrationCumMembershipCertificateDetails,
+		Parse and set in RegistrationCumMembershipCertificateDetails object
+		"""
 		rcmc_details_list = []
 		rcmc_details_data = rcmc_details_html_data.find_all('td', attrs={'colspan':'100'})
 
@@ -282,25 +338,40 @@ class IECLookupService():
 
 
 	def get_text_of_next_sibling(self, current_sibling):
+		"""
+		This helper method returns TEXT of next sibling from current sibling
+		"""
 		return current_sibling.next_sibling.next_sibling
 
 	def get_string_from_sibling_text(self, sibling_text):
+		"""
+		This helper method returns string of text removing void spaces
+		"""
 		return str(sibling_text).strip()
 
 	def save_complete_iec_details(self, importer_exporter_code_details, directors_list, branches_list, registration_details_list, rcmc_details_list):
+		"""
+		This method associates embedded objects with iec details 
+		saves iec details and returns an instance of it
+		"""
 		importer_exporter_code_details.directors = directors_list
 		importer_exporter_code_details.branches = branches_list
 		importer_exporter_code_details.registration_details = registration_details_list
 		importer_exporter_code_details.rcmc_details = rcmc_details_list
 
 		saved_iec_details = importer_exporter_code_details.save()	
+
 		return saved_iec_details	
 
-
 	def retrieve_iec_data_with_code(self, importer_exporter_code):
+		"""
+		This method will searches for a record in DB with IEC code
+		which returns a QuerySet 
+		if atleast one record is present, return an IEC details object
+		"""
 		importer_exporter_code_details = ImporterExporterCodeDetails.objects(importer_exporter_code= importer_exporter_code)
 		if importer_exporter_code_details:		
-			return importer_exporter_code_details
+			return importer_exporter_code_details[0]
 		else:
 			raise ValueError('Sorry, No IEC data found for given code.', status.HTTP_404_NOT_FOUND)
 
