@@ -31,11 +31,12 @@ def validate_importer_exporter_code(request):
 	except ValueError as err:
 		HttpResponse.status_code = err.args[1]
 		return JsonResponse({'detail': err.args[0]})
-	# except Exception, e:
-	# 	HttpResponse.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-	# 	return JsonResponse({'detail': 'Oops, An Error occured','error': str(e)})
+	except Exception, e:
+		HttpResponse.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+		return JsonResponse({'detail': 'Oops, An Error occured','error': str(e)})
 
 
+@csrf_exempt
 def retrieve_importer_exporter_code(request):
 	"""
 	request comtains 10 digit code of IEC
