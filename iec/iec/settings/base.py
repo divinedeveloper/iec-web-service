@@ -104,6 +104,9 @@ WSGI_APPLICATION = 'iec.wsgi.application'
 
 
 ########## DATABASE CONFIGURATION
+
+#NoSQL DB configuration can be found in respective environment files
+
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 

@@ -22,7 +22,7 @@ from pymongo.errors import InvalidURI
 #   Then what I get is what I was expecting for
 
 @pytest.mark.unittest
-class TestDisconnectMainDB:
+class TestUnitDisconnectMainDB:
 
 	def setup_method(self):
 		"""
@@ -49,7 +49,7 @@ class TestDisconnectMainDB:
 
 
 @pytest.mark.unittest
-class TestConnectionToTestDB:
+class TestUnitConnectionToTestDB:
 	"""
 	Testing util method get_test_db() which returns instance of
 	Test database
@@ -75,7 +75,7 @@ class TestConnectionToTestDB:
 
 
 @pytest.mark.unittest
-class TestNoConnectionToTestDB:
+class TestUnitNoConnectionToTestDB:
 	"""
 	Testing util method get_test_db() which cant connect to
 	Test database
@@ -108,6 +108,77 @@ class TestNoConnectionToTestDB:
 		if open due to errors or non execution of test_disconnecting_main_db()
 		"""
 		self.test_db_client = None
+
+@pytest.mark.unittest
+class TestUnitGlobalStringSettings:
+	"""
+	Testing util method get_test_db() which cant connect to
+	Test database
+	"""
+
+	def setup_method(self):
+		self.test_dgft_site_url = "http://dgft.delhi.nic.in:8100/dgft/IecPrint"
+		self.test_iec_not_proper = "IEC is not proper"
+		self.test_applicant_name_not_proper = "Applicant name is not proper"
+		self.test_dgft_success_reply = "Importer Exporter Code"
+ 		self.test_party_name_address = "Party Name and Address" 
+		self.test_banker_detail = "Banker Detail"
+		self.test_iec_status = "IEC Status"
+
+	def test_dgft_site_url_string(self):
+		"""
+		check if valid dgft site url in settings
+		"""
+		assert self.test_dgft_site_url == settings.DGFT_SITE_URL
+
+	def test_iec_not_proper_string(self):
+		"""
+		check if valid test_iec_not_proper in settings
+		"""
+		assert self.test_iec_not_proper == settings.DGFT_IEC_NOT_PROPER_ERROR
+
+	def test_applicant_name_not_proper_string(self):
+		"""
+		check if valid test_applicant_name_not_proper in settings
+		"""
+		assert self.test_applicant_name_not_proper == settings.DGFT_APPLICANT_NAME_NOT_PROPER_ERROR
+
+	def test_dgft_success_reply_string(self):
+		"""
+		check if valid test_dgft_success_reply in settings
+		"""
+		assert self.test_dgft_success_reply == settings.DGFT_SUCCESS_REPLY
+
+	def test_party_name_address_string(self):
+		"""
+		check if valid test_party_name_address in settings
+		"""
+		assert self.test_party_name_address == settings.DGFT_PARTY_NAME_ADDRESS_STRING
+
+	def test_iec_not_proper_string(self):
+		"""
+		check if valid test_banker_detail in settings
+		"""
+		assert self.test_banker_detail == settings.DGFT_BANKER_DETAIL_STRING
+
+	def test_iec_not_proper_string(self):
+		"""
+		check if valid test_iec_status in settings
+		"""
+		assert self.test_iec_status == settings.IEC_STATUS_STRING
+
+	def teardown_method(self):
+		"""
+		Close the local database connection
+		if open due to errors or non execution of test_disconnecting_main_db()
+		"""
+		self.test_dgft_site_url = None
+		self.test_iec_not_proper = None
+		self.test_applicant_name_not_proper = None
+		self.test_dgft_success_reply = None
+ 		self.test_party_name_address = None
+		self.test_banker_detail = None
+		self.test_iec_status = None
 
 	
 

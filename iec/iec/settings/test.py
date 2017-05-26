@@ -7,6 +7,16 @@ import logging
 DEBUG = True
 ########## END DEBUG CONFIGURATION
 
+########## FULL URL CONFIGURATION FOR UNIT & INTEGRATION TESTS
+IEC_LOOKUP_URL = 'http://127.0.0.1:8000/iec/api/v1/lookup/'
+IEC_RETRIEVE_URL = 'http://127.0.0.1:8000/iec/api/v1/retrieve/'
+
+IEC_LOOKUP_MINI_URL = '/lookup/'
+IEC_RETRIEVE_MINI_URL = '/retrieve/'
+########## END FULL URL CONFIGURATION FOR INTEGRATION TESTS
+
+
+
 ########## DATABASE CONFIGURATION
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
@@ -22,9 +32,10 @@ _MONGODB_DATABASE_HOST = \
     'mongodb://%s:%s@%s:%s/%s' \
     % (_MONGODB_USER, _MONGODB_PASSWD, _MONGODB_HOST, _MONGODB_PORT, _MONGODB_NAME)
 
-# try:
-# 	mongoengine.connect(_MONGODB_NAME, host= _MONGODB_DATABASE_HOST)
-# except Exception as e:
-# 	print '%s (%s)' % (e.message, type(e))
+#Trying MongoMock for CI testig instead of real test DB
+try:
+	mongoengine.connect(_MONGODB_NAME, host= _MONGODB_DATABASE_HOST)
+except Exception as e:
+	print '%s (%s)' % (e.message, type(e))
 
 ########## END DATABASE CONFIGURATION
