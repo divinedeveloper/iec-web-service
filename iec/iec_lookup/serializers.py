@@ -1,5 +1,5 @@
 from rest_framework_mongoengine import serializers
-from iec_lookup.models import ImporterExporterCodeDetails
+from iec_lookup.models import ImporterExporterCodeDetails, Director, Branch, RegistrationDetails,RegistrationCumMembershipCertificateDetails
 
 class IECDetailsSerializer(serializers.DocumentSerializer):
 	"""
@@ -8,6 +8,5 @@ class IECDetailsSerializer(serializers.DocumentSerializer):
 	"""
 	class Meta:
 		model = ImporterExporterCodeDetails
-		depth = 2
-
-
+		fields = '__all__'
+		depth = 3

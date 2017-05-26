@@ -5,7 +5,7 @@ from django.conf import settings
 import mongoengine
 import logging
 import pytest
-from pymongo import MongoClient
+from mongomock import MongoClient
 from pymongo.errors import InvalidURI 
 # from iec_lookup.tests.fixtures import mongo_test_db_setup
 
@@ -21,6 +21,7 @@ from pymongo.errors import InvalidURI
 #   When I do something
 #   Then what I get is what I was expecting for
 
+@pytest.mark.unittest
 class TestDisconnectMainDB:
 
 	def setup_method(self):
@@ -47,6 +48,7 @@ class TestDisconnectMainDB:
 		self.main_db.close()
 
 
+@pytest.mark.unittest
 class TestConnectionToTestDB:
 	"""
 	Testing util method get_test_db() which returns instance of
@@ -71,6 +73,8 @@ class TestConnectionToTestDB:
 		"""
 		self.test_db_client.close()
 
+
+@pytest.mark.unittest
 class TestNoConnectionToTestDB:
 	"""
 	Testing util method get_test_db() which cant connect to
@@ -85,7 +89,7 @@ class TestNoConnectionToTestDB:
 		check when no connection params are present
 		It will raise connection error
 		"""
-		with pytest.raises(mongoengine.connection.ConnectionError) as exc_info:
+		with pytest.raises(mongoengine.connection.MongoEngineConnectionError) as exc_info:
 			mongoengine.connection.disconnect()
 			return mongoengine.connect()
 

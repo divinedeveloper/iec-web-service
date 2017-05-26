@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from iec_lookup.models import ImporterExporterCodeDetails, Director, Branch, RegistrationDetails, RegistrationCumMembershipCertificateDetails, ImporterExporterCodeToBeRetrieved
-from mongoengine.django.shortcuts import get_document_or_404
 from django.conf import settings
 from rest_framework import status
 from bs4 import BeautifulSoup, NavigableString, Tag

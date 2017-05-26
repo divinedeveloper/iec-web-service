@@ -22,6 +22,8 @@ def validate_importer_exporter_code(request):
 		for key, value in json_body.iteritems():
 			if value is None or value == "":
 				raise ValueError('Please provide '+ key, status.HTTP_400_BAD_REQUEST)
+			if key == "code" and len(value) != 10:
+				raise ValueError('Please provide valid 10 digit iec code', status.HTTP_400_BAD_REQUEST)
 
 		iec_lookup_service = IECLookupService()
 		lookup_validate_iec_response = iec_lookup_service.lookup_validate_iec(json_body)
@@ -44,7 +46,7 @@ def retrieve_importer_exporter_code(request):
 	"""
 	try:
 		code = request.GET.get('code', '')
-		if code == "" or code == None :
+		if code == "" or code == None or len(code) != 10:
 			raise ValueError('Please provide valid code', status.HTTP_400_BAD_REQUEST)
 
 		iec_lookup_service = IECLookupService()
