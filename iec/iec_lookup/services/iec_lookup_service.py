@@ -4,6 +4,8 @@ from django.conf import settings
 from rest_framework import status
 from bs4 import BeautifulSoup, NavigableString, Tag
 from collections import OrderedDict
+from iec_lookup.custom_exceptions import CustomApiException
+from iec_lookup import utils
 import datetime
 import requests
 import logging
@@ -44,7 +46,7 @@ class IECLookupService():
 		"""
 		importer_exporter_code_details = self.get_iec_with_code_and_name(json_body)
 		if importer_exporter_code_details:
-			return importer_exporter_code_details[0]
+			return importer_exporter_code_details
 		else:
 			try:
 				dgft_site_response = self.poll_dgft_site_with_iec_and_name(json_body)
@@ -53,16 +55,21 @@ class IECLookupService():
 				return self.handle_dgft_response(dgft_site_response)
 			except requests.exceptions.RequestException as e:
 				#check if it exists in retrieval document, if not create one 
-				self.get_or_save_iec_to_retrieve_data(json_body)
-				raise ValueError('Sorry, Unable to connect to DGFT site. Please try again later.', status.HTTP_503_SERVICE_UNAVAILABLE)
+				importer_exporter_code_to_retrieve = self.get_or_save_iec_to_retrieve_data(json_body)
+				raise CustomApiException(utils.DGFT_SITE_IS_DOWN, status.HTTP_503_SERVICE_UNAVAILABLE)
 
 	def get_iec_with_code_and_name(self, json_body):
 		"""
 		This method will return a QuerySet List of IEC details
-		Get object by index in calling method
+		Get object by code and name in calling method,
+		will throw does not exists if objectiec not found
 		"""
-		importer_exporter_code_details = ImporterExporterCodeDetails.objects(importer_exporter_code= json_body["code"], party_name__istartswith= json_body["name"])
-		return importer_exporter_code_details
+		try:
+			importer_exporter_code_details = ImporterExporterCodeDetails.objects.get(importer_exporter_code= json_body["code"], party_name__istartswith= json_body["name"])
+			return importer_exporter_code_details
+		except ImporterExporterCodeDetails.DoesNotExist:
+			importer_exporter_code_details = None
+			return importer_exporter_code_details
 
 	def poll_dgft_site_with_iec_and_name(self, json_body):
 		"""
@@ -70,20 +77,19 @@ class IECLookupService():
 		and fetch response
 		"""
 		dgft_site_response = requests.post(settings.DGFT_SITE_URL, data={'iec': json_body['code'], 'name': json_body['name']})
-		# logging.debug(dgft_site_response.text)
 		return dgft_site_response.text
 
 	def get_or_save_iec_to_retrieve_data(self, json_body):
 		"""
 		Save IEC to get data later
-		A cronjob will regularly run to fetch data for IEC to be retireved and save in IEC details
+		Later a cronjob will regularly run to fetch data for IEC to be retireved and save in IEC details
 		"""
-		importer_exporter_code_to_retrieve = ImporterExporterCodeToBeRetrieved.objects(importer_exporter_code= json_body["code"], name__istartswith= json_body["name"])
-		if importer_exporter_code_to_retrieve:
-			return
-		else:
-			ImporterExporterCodeToBeRetrieved(importer_exporter_code= json_body["code"], name= json_body['name']).save()
-			return
+		try:
+			importer_exporter_code_to_retrieve = ImporterExporterCodeToBeRetrieved.objects.get(importer_exporter_code= json_body["code"], name__istartswith= json_body["name"])
+			return importer_exporter_code_to_retrieve
+		except ImporterExporterCodeToBeRetrieved.DoesNotExist:
+			importer_exporter_code_to_retrieve = ImporterExporterCodeToBeRetrieved(importer_exporter_code= json_body["code"], name= json_body['name']).save()
+			return importer_exporter_code_to_retrieve
 
 	def handle_dgft_response(self, dgft_site_response):
 		"""
@@ -91,9 +97,11 @@ class IECLookupService():
 		else send to parse html and get data
 		"""
 		if dgft_site_response == settings.DGFT_IEC_NOT_PROPER_ERROR:
-			raise ValueError('Please enter proper iec code', status.HTTP_400_BAD_REQUEST)
+			raise CustomApiException(utils.DGFT_SITE_IEC_CODE_NOT_PROPER, status.HTTP_400_BAD_REQUEST)
+
 		if dgft_site_response == settings.DGFT_APPLICANT_NAME_NOT_PROPER_ERROR:
-			raise ValueError('Please enter proper iec name', status.HTTP_400_BAD_REQUEST)
+			raise CustomApiException(utils.DGFT_SITE_IEC_NAME_NOT_PROPER, status.HTTP_400_BAD_REQUEST)
+
 		if settings.DGFT_SUCCESS_REPLY in dgft_site_response:
 			#parse html and convert to json or dict and save in db
 			return self.html_to_object_parser_for_success_data(dgft_site_response)
@@ -125,7 +133,7 @@ class IECLookupService():
 		dgft_site_error_response_soup = BeautifulSoup(dgft_site_error_response, "html.parser")
 		dgft_site_error_message = str(dgft_site_error_response_soup.find("body").text)
 
-		raise ValueError(dgft_site_error_message, status.HTTP_400_BAD_REQUEST)
+		raise CustomApiException(dgft_site_error_message, status.HTTP_400_BAD_REQUEST)
 
 	def iec_details_html_data_parser(self, iec_html_data):
 		"""
@@ -143,7 +151,7 @@ class IECLookupService():
 					#navigating to 3rd element to get value for key
 					iec_detail_value = iec_detail_key.next_element.next_element.next_element.next_element
 					#set ordered dict data
-					iec_order_dict_data[iec_detail_key] = iec_detail_value
+					iec_order_dict_data[iec_detail_key] = self.get_string_from_sibling_text(iec_detail_value)
 
 				if iec_detail_key == settings.DGFT_PARTY_NAME_ADDRESS_STRING:
 					party_name_address_soup = each_iec_row.find_all('td')[2]
@@ -153,7 +161,7 @@ class IECLookupService():
 				if iec_detail_key == settings.IEC_STATUS_STRING:
 					iec_status_soup = each_iec_row.find_all('td')[2]
 					iec_status_value = iec_status_soup.b.text
-					iec_order_dict_data[iec_detail_key] = iec_status_value
+					iec_order_dict_data[iec_detail_key] = self.get_string_from_sibling_text(iec_status_value)
 
 				if iec_detail_key == settings.DGFT_BANKER_DETAIL_STRING:
 					#get value explicitly
@@ -161,26 +169,18 @@ class IECLookupService():
 
 					iec_order_dict_data = self.parse_banker_detail_soup(banker_detail_soup, iec_order_dict_data)
 									
-
-		importer_exporter_code_details = ImporterExporterCodeDetails(importer_exporter_code = self.get_string_from_sibling_text(iec_order_dict_data['IEC']),
-			importer_exporter_code_allotment_date = self.get_string_from_sibling_text(iec_order_dict_data['IEC Allotment Date']),
-			file_number = self.get_string_from_sibling_text(iec_order_dict_data['File Number']),
-			file_date = self.get_string_from_sibling_text(iec_order_dict_data['File Date']), 
-			party_name = self.get_string_from_sibling_text(iec_order_dict_data['party_name']),
-			party_address = iec_order_dict_data['party_address'],
-			phone_number = self.get_string_from_sibling_text(iec_order_dict_data['Phone No']), 
-			email = self.get_string_from_sibling_text(iec_order_dict_data['e_mail']),
-			exporter_type = self.get_string_from_sibling_text(iec_order_dict_data['Exporter Type']), 
-			importer_exporter_code_status = self.get_string_from_sibling_text(iec_order_dict_data['IEC Status']),
-			date_of_establishment = self.get_string_from_sibling_text(iec_order_dict_data['Date of Establishment']), 
-			bin_pan_extension = self.get_string_from_sibling_text(iec_order_dict_data['BIN (PAN+Extension)']),
-			pan_issue_date = self.get_string_from_sibling_text(iec_order_dict_data['PAN ISSUE DATE']), 
-			pan_issued_by = self.get_string_from_sibling_text(iec_order_dict_data['PAN ISSUED BY']),
-			nature_of_concern = self.get_string_from_sibling_text(iec_order_dict_data['Nature Of Concern']), 
-			bank_name_and_location = self.get_string_from_sibling_text(iec_order_dict_data['bank_name_and_location']),
-			account_type = self.get_string_from_sibling_text(iec_order_dict_data['account_type']),
-			account_number = self.get_string_from_sibling_text(iec_order_dict_data['account_number'])
-			)
+		
+		importer_exporter_code_details = ImporterExporterCodeDetails(importer_exporter_code = iec_order_dict_data['IEC'],
+			importer_exporter_code_allotment_date = iec_order_dict_data['IEC Allotment Date'],
+			file_number = iec_order_dict_data['File Number'], file_date = iec_order_dict_data['File Date'], 
+			party_name = iec_order_dict_data['party_name'],	party_address = iec_order_dict_data['party_address'],
+			phone_number = iec_order_dict_data['Phone No'], email = iec_order_dict_data['e_mail'],
+			exporter_type = iec_order_dict_data['Exporter Type'], importer_exporter_code_status = iec_order_dict_data['IEC Status'],
+			date_of_establishment = iec_order_dict_data['Date of Establishment'], bin_pan_extension = iec_order_dict_data['BIN (PAN+Extension)'],
+			pan_issue_date = iec_order_dict_data['PAN ISSUE DATE'], pan_issued_by = iec_order_dict_data['PAN ISSUED BY'],
+			nature_of_concern = iec_order_dict_data['Nature Of Concern'], bank_name_and_location = iec_order_dict_data['bank_name_and_location'],
+			account_type = iec_order_dict_data['account_type'], account_number = iec_order_dict_data['account_number'],
+			is_active = True, is_deleted = False)
 
 		return importer_exporter_code_details
 
@@ -192,7 +192,7 @@ class IECLookupService():
 
 		party_address = self.parse_address_of_party_and_branch(party_name_address_soup)
 
-		iec_order_dict_data['party_name'] = party_name
+		iec_order_dict_data['party_name'] = self.get_string_from_sibling_text(party_name)
 		iec_order_dict_data['party_address'] = party_address
 
 		return iec_order_dict_data
@@ -205,9 +205,9 @@ class IECLookupService():
 		account_type = banker_detail_soup.br.next_sibling
 		account_number = self.get_text_of_next_sibling(account_type)
 
-		iec_order_dict_data['bank_name_and_location'] = bank_name_and_location
-		iec_order_dict_data['account_type'] = str(account_type).split(":")[1]
-		iec_order_dict_data['account_number'] = str(account_number).split(":")[1]
+		iec_order_dict_data['bank_name_and_location'] = self.get_string_from_sibling_text(bank_name_and_location)
+		iec_order_dict_data['account_type'] = self.get_string_from_sibling_text( str(account_type).split(":")[1])
+		iec_order_dict_data['account_number'] = self.get_string_from_sibling_text( str(account_number).split(":")[1])
 
 		return iec_order_dict_data
 
@@ -307,7 +307,7 @@ class IECLookupService():
 					next_sibling_value = next_sibling_value + ", "
 					address = address +  next_sibling_value
 
-		return address
+		return self.get_string_from_sibling_text(address)
 
 	def registration_details_html_data_parser(self, registration_details_html_data):
 		"""
@@ -395,11 +395,12 @@ class IECLookupService():
 		which returns a QuerySet 
 		if atleast one record is present, return an IEC details object
 		"""
-		importer_exporter_code_details = ImporterExporterCodeDetails.objects(importer_exporter_code= importer_exporter_code)
-		if importer_exporter_code_details:		
-			return importer_exporter_code_details[0]
-		else:
-			raise ValueError('Sorry, No IEC data found for given code.', status.HTTP_404_NOT_FOUND)
+		try:
+			importer_exporter_code_details = ImporterExporterCodeDetails.objects.get(importer_exporter_code= importer_exporter_code)
+			return importer_exporter_code_details
+		except ImporterExporterCodeDetails.DoesNotExist:
+			raise CustomApiException(utils.IEC_NOT_FOUND_IN_DB, status.HTTP_404_NOT_FOUND)
+			
 
 
 

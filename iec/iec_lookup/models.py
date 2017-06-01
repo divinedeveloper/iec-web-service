@@ -1,7 +1,6 @@
 from django.db import models
 from datetime import datetime
 from mongoengine import Document, EmbeddedDocument, fields
-from collections import OrderedDict
 import json
 
 # Create your models here.
@@ -74,11 +73,6 @@ class ImporterExporterCodeDetails(Document):
 	account_type = fields.StringField()
 	account_number = fields.StringField()
 
-	#Timestamps
-	drip_iec_date_created = fields.DateTimeField(default=lambda: datetime.now())
-	drip_iec_last_updated = fields.DateTimeField(default=lambda: datetime.now())
-	drip_iec_deleted_at = fields.DateTimeField()
-
 	#activation and deletion flags
 	is_active = fields.BooleanField(default=True)
 	is_deleted = fields.BooleanField(default=False)
@@ -98,11 +92,6 @@ class ImporterExporterCodeToBeRetrieved(Document):
 	importer_exporter_code = fields.StringField(unique=True,required=True)
 	name = fields.StringField(required=True)
 	is_iec_data_retrieved = fields.BooleanField(default=False)
-	
-	#Timestamps
-	drip_iec_date_created = fields.DateTimeField(default=lambda: datetime.now())
-	drip_iec_last_updated = fields.DateTimeField(default=lambda: datetime.now())
-
 
 
 

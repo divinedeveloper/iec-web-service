@@ -17,11 +17,9 @@ _MONGODB_DATABASE_HOST = \
     'mongodb://%s:%s@%s:%s/%s' \
     % (_MONGODB_USER, _MONGODB_PASSWD, _MONGODB_HOST, _MONGODB_PORT, _MONGODB_NAME)
 
-# from pymongo import MongoClient
 try:
 	mongoengine.connect(_MONGODB_NAME, host= _MONGODB_DATABASE_HOST)
 except Exception as e:
 	logging.debug( '%s (%s)' % (e.args, type(e)))
-    # print '%s (%s)' % (e.message, type(e))
 
 ########## END DATABASE CONFIGURATION

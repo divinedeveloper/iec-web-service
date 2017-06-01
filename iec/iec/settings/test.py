@@ -36,6 +36,20 @@ _MONGODB_DATABASE_HOST = \
 try:
 	mongoengine.connect(_MONGODB_NAME, host= _MONGODB_DATABASE_HOST)
 except Exception as e:
-	print '%s (%s)' % (e.message, type(e))
+	logging.debug( '%s (%s)' % (e.message, type(e)))
 
 ########## END DATABASE CONFIGURATION
+
+# override the mongodb with mocks for pytest
+# mongoengine.register_connection(
+#     'default',
+#     name='test_iec',
+#     host='mongomock://localhost',
+#     # let datetime in pymongo/mongoengine with timezone information
+#     tz_aware=True)
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#     }
+# }

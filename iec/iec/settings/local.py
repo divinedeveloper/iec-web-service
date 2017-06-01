@@ -19,14 +19,7 @@ _MONGODB_DATABASE_HOST = \
     'mongodb://%s:%s@%s:%s/%s' \
     % (_MONGODB_USER, _MONGODB_PASSWD, _MONGODB_HOST, _MONGODB_PORT, _MONGODB_NAME)
 
-# from pymongo import MongoClient
 try:
-	# client = MongoClient('mongodb://iecadmin:iecpass@127.0.0.1:27017/iec')
-	# db = client.test
-	# coll = db.dataset
-	# result = db.restaurants.insert_one({"borough": "Manhattan"})
-	# print result.inserted_id
-
 	mongoengine.connect(_MONGODB_NAME, host= _MONGODB_DATABASE_HOST)
 except Exception as e:
     print '%s (%s)' % (e.message, type(e))

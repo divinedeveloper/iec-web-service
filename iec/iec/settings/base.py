@@ -149,7 +149,9 @@ REST_FRAMEWORK = {
     # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny'
-    ]
+    ],
+    'EXCEPTION_HANDLER': 'iec.iec_lookup.custom_exceptions.iec_custom_exception_handler',
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json'
 }
 ########## END REST FRAMEWORK CONFIGURATION
 
@@ -163,6 +165,10 @@ DGFT_PARTY_NAME_ADDRESS_STRING = "Party Name and Address"
 DGFT_BANKER_DETAIL_STRING = "Banker Detail"
 IEC_STATUS_STRING = "IEC Status"
 
+# DGFT_SUCCESS_RESPONSE = """ """
+
 ########## END GLOBAL STRING VALUES CONFIGURATION
 
-# DGFT_SUCCESS_RESPONSE = """ """
+
+
+
