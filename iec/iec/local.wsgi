@@ -11,6 +11,6 @@ import os, sys ,site
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "iec.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "iec.settings.local")
 
 application = get_wsgi_application()

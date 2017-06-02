@@ -96,10 +96,10 @@ class IECLookupService():
 		if invalid response from dgft site, throw exceptions with corresponding messages
 		else send to parse html and get data
 		"""
-		if dgft_site_response == settings.DGFT_IEC_NOT_PROPER_ERROR:
+		if settings.DGFT_IEC_NOT_PROPER_ERROR in dgft_site_response:
 			raise CustomApiException(utils.DGFT_SITE_IEC_CODE_NOT_PROPER, status.HTTP_400_BAD_REQUEST)
 
-		if dgft_site_response == settings.DGFT_APPLICANT_NAME_NOT_PROPER_ERROR:
+		if settings.DGFT_APPLICANT_NAME_NOT_PROPER_ERROR in dgft_site_response:
 			raise CustomApiException(utils.DGFT_SITE_IEC_NAME_NOT_PROPER, status.HTTP_400_BAD_REQUEST)
 
 		if settings.DGFT_SUCCESS_REPLY in dgft_site_response:
@@ -131,8 +131,7 @@ class IECLookupService():
 		Some erros do come in html body parse them and throw message 
 		"""
 		dgft_site_error_response_soup = BeautifulSoup(dgft_site_error_response, "html.parser")
-		dgft_site_error_message = str(dgft_site_error_response_soup.find("body").text)
-
+		dgft_site_error_message = self.get_string_from_sibling_text(dgft_site_error_response_soup.find("body").text)
 		raise CustomApiException(dgft_site_error_message, status.HTTP_400_BAD_REQUEST)
 
 	def iec_details_html_data_parser(self, iec_html_data):
@@ -391,7 +390,7 @@ class IECLookupService():
 
 	def retrieve_iec_data_with_code(self, importer_exporter_code):
 		"""
-		This method will searches for a record in DB with IEC code
+		This method searches for a record in DB with IEC code
 		which returns a QuerySet 
 		if atleast one record is present, return an IEC details object
 		"""

@@ -2,7 +2,9 @@
 from .base import *
 import logging
 
-
+########## SITE CONFIGURATION
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+########## END SITE CONFIGURATION
 
 ########## DATABASE CONFIGURATION
 # Database
