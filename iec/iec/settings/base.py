@@ -58,6 +58,7 @@ INSTALLED_APPS = (
     'rest_framework_mongoengine',
 
     'iec',
+    'iec_lookup',
 )
 ########## END APP CONFIGURATION
 
@@ -103,6 +104,9 @@ WSGI_APPLICATION = 'iec.wsgi.application'
 
 
 ########## DATABASE CONFIGURATION
+
+#NoSQL DB configuration can be found in respective environment files
+
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
@@ -145,6 +149,26 @@ REST_FRAMEWORK = {
     # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny'
-    ]
+    ],
+    'EXCEPTION_HANDLER': 'iec.iec_lookup.custom_exceptions.iec_custom_exception_handler',
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json'
 }
 ########## END REST FRAMEWORK CONFIGURATION
+
+########## GLOBAL STRING VALUES CONFIGURATION
+
+DGFT_SITE_URL = "http://dgft.delhi.nic.in:8100/dgft/IecPrint"
+DGFT_IEC_NOT_PROPER_ERROR = "IEC is not proper"
+DGFT_APPLICANT_NAME_NOT_PROPER_ERROR = "Applicant name is not proper"
+DGFT_SUCCESS_REPLY = "Importer Exporter Code"
+DGFT_PARTY_NAME_ADDRESS_STRING = "Party Name and Address" 
+DGFT_BANKER_DETAIL_STRING = "Banker Detail"
+IEC_STATUS_STRING = "IEC Status"
+
+# DGFT_SUCCESS_RESPONSE = """ """
+
+########## END GLOBAL STRING VALUES CONFIGURATION
+
+
+
+
