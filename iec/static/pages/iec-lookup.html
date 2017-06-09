@@ -1,0 +1,246 @@
+<div class="container" ng-controller="IecLookUpCtrl">
+    <div class="messages">
+        <span class="error-message" ng-bind="errorMessage"></span>
+    </div>
+      
+    <form name="iecLookupForm">
+      <div class="form-group">
+        <label>
+          Importer Exorter Code
+        </label>
+        <input type="text" class="form-control" placeholder="Please enter 10 digit iec code" ng-model="ieCode" ng-minlength="10" ng-maxlength="10" ng-pattern="/^[0-9]*$/" name="ieCode" 
+                 ng-required="true">
+          <span class="control-group error">
+            <span class="error text-danger" ng-if="iecLookupForm.ieCode.$error.required">Required Field </span>
+            <span class="error text-danger" ng-if="!iecLookupForm.ieCode.$valid">Only 10 digits allowed</span>
+        </span>
+      </div>
+      <div class="form-group">
+        <label>
+          Company Name
+        </label>
+        <input type="text" class="form-control" placeholder="Please enter company name" ng-model="companyName" ng-minlength="3" name="companyName" 
+                 ng-required="true">
+          <span class="control-group error">
+          <span class="error text-danger" ng-if="iecLookupForm.companyName.$error.required">Required Field</span>
+          <span class="error text-danger" ng-if="!iecLookupForm.companyName.$valid">Minimum 3 characters</span>
+
+            </span>
+      </div>
+
+      <a id="iec-lookup-link" href ng-disabled="!iecLookupForm.$valid" ng-click="validateIEC()" 
+         class="btn btn-lg btn-primary">Lookup IEC</a>
+    </form><br><br>
+    <div>
+      
+    </div><br><br>
+
+    <div class="container well" ng-show="responseIecData">
+
+       <span class="badge"> <h5> IEC Details : </h5></span>
+       <br><br>
+        
+        <table class="table table-striped table-hover">
+          <!-- <tr>
+            <th>
+              <span>IEC Details Key</span>
+            </th>
+             <th>
+              <span>  </span>
+            </th>
+            <th>
+              <span>IEC Details Value</span>
+            </th>
+          </tr> -->
+            <tr>
+              <td><span>IEC</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.importer_exporter_code}}</span></td>
+            </tr>
+            <tr>
+              <td><span>IEC Allotment Date</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.importer_exporter_code_allotment_date}}</span></td>
+            </tr>
+             <tr>
+              <td><span>File Number</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.file_number}}</span></td>
+            </tr>
+             <tr>
+              <td><span>File Date</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.file_date}}</span></td>
+            </tr>
+            <tr>
+              <td><span>Party Name</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.party_name}}</span></td>
+            </tr>
+             <tr>
+              <td><span>Party Address</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.party_address}}</span></td>
+            </tr>
+             <tr>
+              <td><span>Phone No</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.phone_number}}</span></td>
+            </tr>
+            <tr>
+              <td><span>Email</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.email}}</span></td>
+            </tr>
+             <tr>
+              <td><span>Exporter Type</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.exporter_type}}</span></td>
+            </tr>
+             <tr>
+              <td><span>IEC Status</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.importer_exporter_code_status}}</span></td>
+            </tr>
+            <tr>
+              <td><span>Date of Establishment</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.date_of_establishment}}</span></td>
+            </tr>
+             <tr>
+              <td><span>BIN (PAN+Extension)</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.bin_pan_extension}}</span></td>
+            </tr>
+             <tr>
+              <td><span>PAN ISSUE DATE</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.pan_issue_date}}</span></td>
+            </tr>
+            <tr>
+              <td><span>PAN ISSUED BY</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.pan_issued_by}}</span></td>
+            </tr>
+             <tr>
+              <td><span>Nature Of Concern</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.nature_of_concern}}</span></td>
+            </tr>
+             <tr>
+              <td><span>Bank Name and Location</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.bank_name_and_location}}</span></td>
+            </tr>
+            <tr>
+              <td><span>Account Type</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.account_type}}</span></td>
+            </tr>
+             <tr>
+              <td><span>Account No.</span></td>
+              <td><span> : </span></td>
+              <td><span>{{responseIecData.account_number}}</span></td>
+            </tr>
+        </table>
+
+        <br><br>
+
+        <span class="badge"> <h5> Directors : </h5></span>
+
+        <br><br>
+
+        <table class="table table-striped table-bordered table-hover" ng-show="responseIecData.directors">
+            <tr>
+              <th><span>Sr. No.</span></th>
+              <th><span>Name</span></th>
+              <th><span>Father/Husband Name</span></th>
+              <th><span>Address</span></th>
+              <th><span>Phone/Email</span></th>
+            </tr>
+
+            <tr ng-repeat="director in responseIecData.directors">
+              <td><span>{{$index + 1}}</span></td>
+              <td><span>{{director.name}}</span></td>
+              <td><span>{{director.fathers_name}}</span></td>
+              <td><span>{{director.address}}</span></td>
+              <td><span>{{director.phone_email}}</span></td>
+              
+            </tr>
+          </table>
+
+        <br><br>
+
+        <span class="badge"> <h5> Branches : </h5></span>
+
+        <br><br>
+
+        <table class="table table-striped table-bordered table-hover" ng-show="responseIecData.branches">
+            <tr>
+              <th><span>Sr. No.</span></th>
+              <th><span>Branch Code</span></th>
+              <th><span>Branch Address</span></th>
+            </tr>
+
+            <tr ng-repeat="branch in responseIecData.branches">
+              <td><span>{{$index + 1}}</span></td>
+              <td><span>{{branch.branch_code}}</span></td>
+              <td><span>{{branch.address}}</span></td>
+            </tr>
+          </table>
+
+
+      <br><br>
+
+        <span class="badge"> <h5> Registration Details : </h5></span>
+
+        <br><br>
+
+        <table class="table table-striped table-bordered table-hover" ng-show="responseIecData.registration_details">
+            <tr>
+              <th><span>Sr. No.</span></th>
+              <th><span>Type</span></th>
+              <th><span>Number</span></th>
+               <th><span>Issue Date</span></th>
+                <th><span>Registered With</span></th>
+            </tr>
+
+            <tr ng-repeat="registration_detail in responseIecData.registration_details">
+              <td><span>{{$index + 1}}</span></td>
+              <td><span>{{registration_detail.registration_type}}</span></td>
+              <td><span>{{registration_detail.registration_number}}</span></td>
+              <td><span>{{registration_detail.issue_date}}</span></td>
+              <td><span>{{registration_detail.registered_with}}</span></td>
+            </tr>
+          </table>
+
+      <br><br>
+
+        <span class="badge"> <h5> RCMC Details : </h5></span>
+
+        <br><br>
+
+        <table class="table table-striped table-bordered table-hover" ng-show="responseIecData.rcmc_details">
+            <tr>
+              <th><span>Sr. No.</span></th>
+              <th><span>RCMC ID</span></th>
+              <th><span>RCMC Number</span></th>
+               <th><span>Issue Date</span></th>
+                <th><span>Expiry</span></th>
+                <th><span>Issued By</span></th>
+            </tr>
+
+            <tr ng-repeat="rcmc_detail in responseIecData.rcmc_details">
+              <td><span>{{$index + 1}}</span></td>
+              <td><span>{{rcmc_detail.rcmc_id}}</span></td>
+              <td><span>{{rcmc_detail.rcmc_number}}</span></td>
+              <td><span>{{rcmc_detail.issue_date}}</span></td>
+              <td><span>{{rcmc_detail.expiry}}</span></td>
+              <td><span>{{rcmc_detail.issued_by}}</span></td>
+            </tr>
+          </table>
+
+       
+    </div>
+
+  </div>

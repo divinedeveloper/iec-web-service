@@ -4,6 +4,8 @@ from .base import *
 ########## DEBUG CONFIGURATION
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
+
 ########## END DEBUG CONFIGURATION
 
 ########## DATABASE CONFIGURATION

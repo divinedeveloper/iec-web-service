@@ -1,0 +1,80 @@
+<!-- {% load staticfiles %} -->
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp">
+  
+  <head>
+    <meta charset="utf-8">
+    <base href="/">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>DRIP-IEC
+    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- <link href="{% static 'css/navbar-fixed-top.css' %}" rel="stylesheet"> -->
+
+    <link href="/static/css/bootstrap-3.0.0.min.css" rel="stylesheet">
+    <link href="/static/css/navbar-fixed-top.css" rel="stylesheet">
+    <link href="/static/css/toaster.css" rel="stylesheet">
+    <link href="/static/css/bootstrap-glyphicons-3.0.0.css" rel="stylesheet">
+
+    
+     <!-- <script type="text/javascript" src="{% static 'js/lib/jquery/jquery-1.11.1.min.js' %}"></script> -->
+
+      <script type="text/javascript" src="/static/js/lib/jquery/jquery-1.11.1.min.js"></script>
+    
+
+    <script type="text/javascript" src="/static/js/lib/angular/angular.js"></script>
+    <script type="text/javascript" src="/static/js/lib/angular/angular-animate.min.js"></script>
+    <script type="text/javascript" src="/static/js/directive/toaster.js"></script>
+    <script type="text/javascript" src="/static/js/lib/angular/angular-route.js"></script>
+    <script type="text/javascript" src="/static/js/directive/ng-environments.min.js"></script>
+    <script type="text/javascript" src="/static/js/app.js"></script>
+    <script type="text/javascript" src="/static/js/config.js"></script>
+    <script type="text/javascript" src="/static/js/services.js"></script>
+    <script type="text/javascript" src="/static/js/filters.js"></script>
+    <script type="text/javascript" src="/static/js/directives.js"></script>
+  </head>
+  
+  <body ng-controller="AppCtrl">
+<!--    <div >-->
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container">
+          <div class="navbar-header">
+              <button class="navbar-toggle collapsed" data-target=".navbar-collapse" data-toggle="collapse" type="button">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+              </button>
+            
+                                    
+            <a class="navbar-brand" id="home-link" href ng-click="goToHomePage()">
+              <img src="/static/images/drip-capital-logo.png" height="50" width="auto" />
+            </a>
+          </div>
+        </div>
+    </div>
+    <br>
+    <div class="container">
+      <h4>IEC Web Service</h4>
+      <a id="iec-lookup-link" href ng-click="lookupIECByCodeAndName()" class="btn btn-lg btn-primary">Lookup IEC by code and name</a>
+
+      <a id="get-iec-link" href ng-click="getIECByCode()" 
+         class="btn btn-lg btn-primary">Get IEC by code</a>
+    </div><br><br>
+        <div class="container">
+            <toaster-container toaster-options="{'time-out': 3000, 'close-button':true}"></toaster-container>
+            <div ng-view></div>
+        </div>
+    
+<!--    </div>-->
+      <script type="text/javascript" src="/static/js/controllers.js"></script>
+      <script type="text/javascript" src="/static/js/controllers/IecLookUpCtrl.js"></script>
+      <script type="text/javascript" src="/static/js/controllers/GetIecCodeCtrl.js"></script>
+      <script type="text/javascript" src="/static/js/lib/bootstrap/bootstrap-3.0.0.min.js"></script>
+
+  </body>
+
+</html>
