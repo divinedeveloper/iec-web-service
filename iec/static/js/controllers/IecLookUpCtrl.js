@@ -12,19 +12,20 @@ myApp.controller('IecLookUpCtrl', ['$scope', '$http', '$location', '$rootScope',
                 $http({method: 'POST', url: 'iec/api/v1/lookup/', data: createIECData}).
                    success(function(data, status, headers, config) {
                     if(status == 200){
-                        console.log(data)
-                        console.log(data.importer_exporter_code)
                         $scope.responseIecData = data
                            toaster.pop('success', "", "IEC data available");
-                        //change redirect to blurbs created by user
-                        // $location.path("/admin-blurbs");
-
                    }
                        
                        
                      }).
                  error(function(data, status, headers, config) {
                    if(status == 500){
+                        toaster.pop('error', "", data.message);
+                    }
+                     if(status == 502){
+                        toaster.pop('error', "", "Server down");
+                    }
+                    if(status == 503){
                         toaster.pop('error', "", data.message);
                     }
                        if(status == 401){

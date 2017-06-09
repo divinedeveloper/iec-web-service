@@ -24,6 +24,12 @@ myApp.controller('GetIecCodeCtrl', ['$scope', '$http', '$location', '$routeParam
                     if(status == 500){
                         toaster.pop('error', "", data.message);
                     }
+                    if(status == 502){
+                        toaster.pop('error', "", "Server down");
+                    }
+                    if(status == 503){
+                        toaster.pop('error', "", data.message);
+                    }
                     if(status == 404){
                         toaster.pop('error', "", data.message);
 //                      $location.path("/page-not-found");
