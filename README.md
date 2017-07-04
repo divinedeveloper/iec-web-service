@@ -1,6 +1,6 @@
 Introduction:- 
 
-This project is for Drip Capital. 
+This is web scraping project created in python/django/D-R-F and project directory structure created by following Two scoops of django 1.8. 
 
 An IEC Web Service would provide data about any Indian exporter with the following technical
 functionalities:
@@ -37,18 +37,18 @@ Core Requirements:-
 
     - use admin
 
-    - db.createUser({user: "rootiec", pwd: "dripiec", roles: ["root"]}) 
+    - db.createUser({user: "rootiec", pwd: "iecroot", roles: ["root"]}) 
 
 
 #Login with admin user 
 
-    - mongo --port 27017 -u rootiec -p dripiec --authenticationDatabase admin
+    - mongo --port 27017 -u rootiec -p iecroot --authenticationDatabase admin
 
 #Create Production database and user for the same
 
     - use prod_iec
 
-    - db.createUser({user: "drip_prod_iec_admin", pwd:"drip_prod_iecpass", roles:["readWrite"]})
+    - db.createUser({user: "prod_iec_admin", pwd:"prod_iecpass", roles:["readWrite"]})
 
 
 #Similarly create a test database and user for the same
@@ -62,12 +62,12 @@ Core Requirements:-
 
 #Create an organizational directory
 
-    - mkdir drip-capital
+    - mkdir dgft-site-scraper
 
 
-#Clone Gitlab repository
+#Clone GitHub repository
 
-    - git clone https://swapnil-drip@gitlab.com/iec-group/iec-web-service.git
+    - git clone https://github.com/divinedeveloper/iec-web-service.git
 
 
 #Create virtual env for first time only
@@ -92,7 +92,7 @@ Core Requirements:-
 
 #make Jenkins user owner of project directory to execute job
 
-    - cd drip-capital/
+    - cd dgft-site-scraper/
 
     - sudo chown -R jenkins . 
 
@@ -100,9 +100,9 @@ Core Requirements:-
 
     - Select Discard old builds
 
-    - Click on Advance -> Select Use custom workspace -> paste in directory -> /home/devuser/drip-capital/iec-web-service/
+    - Click on Advance -> Select Use custom workspace -> paste in directory -> /home/devuser/dgft-site-scraper/iec-web-service/
 
-    - In soure code Mgmt select -> git -> repo Url -> https://swapnil-drip@gitlab.com/iec-group/iec-web-service.git -> Add -> enter credentials
+    - In soure code Mgmt select -> git -> repo Url -> https://github.com/divinedeveloper/iec-web-service.git -> Add -> enter credentials
 
     - In Build Triggers -> Select Poll SCM -> Schedule #EVERY 15 Minutes H/15 * * * *
 
@@ -137,18 +137,18 @@ Core Requirements:-
 
 #Configure following WSGIPython path in /etc/apache2/apache2.conf
 
-    - WSGIPythonPath /home/devuser/drip-capital/iec-web-service/iec:/home/devuser/drip-capital/iec-web-service/env/lib/python2.7/site-packages
+    - WSGIPythonPath /home/devuser/dgft-site-scraper/iec-web-service/iec:/home/devuser/dgft-site-scraper/iec-web-service/env/lib/python2.7/site-packages
 
 
 #Configure following in /etc/apache2/sites-available/000-default.conf
 
-    - ServerName 139.59.31.145
+    - ServerName my-server-ip-or-domain
     
-    - ServerAlias 139.59.31.145
+    - ServerAlias my-server-ip-or-domain
     
-    - WSGIScriptAlias / /home/devuser/drip-capital/iec-web-service/iec/iec/production.wsgi
+    - WSGIScriptAlias / /home/devuser/dgft-site-scraper/iec-web-service/iec/iec/production.wsgi
 
-        <Directory /home/devuser/drip-capital/iec-web-service/iec>
+        <Directory /home/devuser/dgft-site-scraper/iec-web-service/iec>
     
             <Files production.wsgi>
         
@@ -176,7 +176,7 @@ Core Requirements:-
 
     1. If we could get Excel/CSV file with only IEC numbers and Names, we could enhance this service to automatically read each iec no. and name, poll and fetch data from dgft, parse and save in db.
 
-    2. We could use scrapy to crawl and parse sites like tradegeniusindia to create an inhouse IEC datastore
+    2. We could use scrapy to crawl and parse sites like tradegeniusindia to create an IEC datastore
 
     3. A cron job can run to fetch iec details if dgft site was down.
 
